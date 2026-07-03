@@ -21,7 +21,7 @@ import top.speedcubing.lib.bukkit.events.entity.ClickEvent;
 
 public class Hologram {
 
-    public static final Set<Hologram> all = new HashSet<>();
+    public static final Set<Hologram> all = java.util.concurrent.ConcurrentHashMap.newKeySet();
     public Set<PlayerConnection> tracker = new HashSet<>();
     public final Set<String> world = new HashSet<>();
     private Consumer<ClickEvent> event;

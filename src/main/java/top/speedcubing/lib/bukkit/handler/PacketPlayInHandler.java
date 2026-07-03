@@ -32,26 +32,44 @@ public class PacketPlayInHandler extends ChannelDuplexHandler {
             return;
 
         try {
-            if (((PlayInEvent) new PlayInEvent(player, (Packet<?>) packet).call()).isCancelled())
+            PlayInEvent event = new PlayInEvent(player, (Packet<?>) packet);
+            event.call();
+            if (event.isCancelled()) {
+                if (packet instanceof PacketPlayInUseEntity) {
+                    System.out.println("[DEBUG] PlayInEvent CANCELLED for PacketPlayInUseEntity, player=" + player.getName());
+                }
                 return;
+            }
             super.channelRead(channel, packet);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         if (packet instanceof PacketPlayInUseEntity) {
-            int id = (int) ReflectionUtils.getField(packet, "a");
-            for (NPC npc : NPC.all) {
-                if (npc.entityPlayer.getId() == id && npc.getClickEvent() != null) {
-                    npc.getClickEvent().accept(new ClickEvent(player, ((PacketPlayInUseEntity) packet).a()));
-                    break;
+            try {
+                int id = (int) ReflectionUtils.getField(packet, "a");
+                System.out.println("[DEBUG] PacketPlayInUseEntity received: entityId=" + id + ", player=" + player.getName() + ", action=" + ((PacketPlayInUseEntity) packet).a() + ", NPC.all.size=" + NPC.all.size());
+                boolean found = false;
+                for (NPC npc : NPC.all) {
+                    System.out.println("[DEBUG]   Checking NPC: npcEntityId=" + npc.entityPlayer.getId() + ", hasClickEvent=" + (npc.getClickEvent() != null));
+                    if (npc.entityPlayer.getId() == id && npc.getClickEvent() != null) {
+                        System.out.println("[DEBUG]   NPC MATCH FOUND! Calling click event.");
+                        npc.getClickEvent().accept(new ClickEvent(player, ((PacketPlayInUseEntity) packet).a()));
+                        found = true;
+                        break;
+                    }
                 }
-            }
-            for (Hologram hologram : Hologram.all) {
-                if (hologram.armorStand.getId() == id && hologram.getClickEvent() != null) {
-                    hologram.getClickEvent().accept(new ClickEvent(player, ((PacketPlayInUseEntity) packet).a()));
-                    break;
+                if (!found) {
+                    System.out.println("[DEBUG]   No NPC match for entityId=" + id);
                 }
+                for (Hologram hologram : Hologram.all) {
+                    if (hologram.armorStand.getId() == id && hologram.getClickEvent() != null) {
+                        hologram.getClickEvent().accept(new ClickEvent(player, ((PacketPlayInUseEntity) packet).a()));
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         } else if (packet instanceof PacketPlayInUpdateSign) {
             PacketPlayInUpdateSign p = (PacketPlayInUpdateSign) packet;

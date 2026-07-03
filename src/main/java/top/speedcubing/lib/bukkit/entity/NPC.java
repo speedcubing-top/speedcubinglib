@@ -43,7 +43,7 @@ import top.speedcubing.lib.speedcubingLibBukkit;
 import top.speedcubing.lib.utils.ReflectionUtils;
 
 public class NPC {
-    public static final Set<NPC> all = new java.util.HashSet<>();
+    public static final Set<NPC> all = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private Set<PlayerConnection> tracker = new java.util.HashSet<>();
     public final Set<String> world = new java.util.HashSet<>();
     private Consumer<ClickEvent> event;

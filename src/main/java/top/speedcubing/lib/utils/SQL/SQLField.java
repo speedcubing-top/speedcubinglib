@@ -41,6 +41,9 @@ public class SQLField {
         if(object instanceof Integer) {
             return (Integer) object == 1;
         }
+        if (object instanceof String) {
+            return "1".equals(object) || "true".equalsIgnoreCase((String) object);
+        }
         return (Boolean) object;
     }
 
@@ -65,6 +68,16 @@ public class SQLField {
         }
         if (object instanceof Boolean) {
             return ((Boolean) object) ? 1 : 0;
+        }
+        if (object instanceof Float) {
+            return ((Float) object).intValue();
+        }
+        if (object instanceof Double) {
+            return ((Double) object).intValue();
+        }
+        if (object instanceof String) {
+            String s = (String) object;
+            return s.isEmpty() ? 0 : Integer.parseInt(s);
         }
         return (Integer) object;
     }
