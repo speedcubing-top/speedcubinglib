@@ -48,18 +48,19 @@ public class PacketPlayInHandler extends ChannelDuplexHandler {
         if (packet instanceof PacketPlayInUseEntity) {
             try {
                 int id = (int) ReflectionUtils.getField(packet, "a");
-                System.out.println("[DEBUG] PacketPlayInUseEntity received: entityId=" + id + ", player=" + player.getName() + ", action=" + ((PacketPlayInUseEntity) packet).a() + ", NPC.all.size=" + NPC.all.size());
+                boolean debugNpc = "true".equalsIgnoreCase(System.getenv("SC_DEBUG_NPC"));
+                if (debugNpc) System.out.println("[DEBUG] PacketPlayInUseEntity received: entityId=" + id + ", player=" + player.getName() + ", action=" + ((PacketPlayInUseEntity) packet).a() + ", NPC.all.size=" + NPC.all.size());
                 boolean found = false;
                 for (NPC npc : NPC.all) {
-                    System.out.println("[DEBUG]   Checking NPC: npcEntityId=" + npc.entityPlayer.getId() + ", hasClickEvent=" + (npc.getClickEvent() != null));
+                    if (debugNpc) System.out.println("[DEBUG]   Checking NPC: npcEntityId=" + npc.entityPlayer.getId() + ", hasClickEvent=" + (npc.getClickEvent() != null));
                     if (npc.entityPlayer.getId() == id && npc.getClickEvent() != null) {
-                        System.out.println("[DEBUG]   NPC MATCH FOUND! Calling click event.");
+                        if (debugNpc) System.out.println("[DEBUG]   NPC MATCH FOUND! Calling click event.");
                         npc.getClickEvent().accept(new ClickEvent(player, ((PacketPlayInUseEntity) packet).a()));
                         found = true;
                         break;
                     }
                 }
-                if (!found) {
+                if (!found && debugNpc) {
                     System.out.println("[DEBUG]   No NPC match for entityId=" + id);
                 }
                 for (Hologram hologram : Hologram.all) {
