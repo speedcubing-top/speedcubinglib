@@ -5,23 +5,19 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 
 public class ComponentText {
     private final StringBuilder serial = new StringBuilder();
-    private final StringBuilder plainText = new StringBuilder();
-    private final StringBuilder colorText = new StringBuilder();
+    private final StringBuilder text = new StringBuilder();
 
     public String serialize() {
         return serial.toString();
     }
 
-    public String toPlainText() {
-        return plainText.toString();
-    }
-
-    public String toColorText() {
-        return colorText.toString();
+    public String toText() {
+        return text.toString();
     }
 
     public TextComponent toBungee() {
@@ -61,8 +57,7 @@ public class ComponentText {
 
     public void append(String s) {
         serial.append(s);
-        colorText.append(s);
-        plainText.append(MinecraftTextUtils.removeColorCode(s));
+        text.append(s);
     }
 
     public static ComponentText unSerialize(String serial) {
@@ -133,9 +128,8 @@ class BungeeText {
     }
 
     private net.md_5.bungee.api.chat.HoverEvent a(TextHoverEvent h) {
-        switch (h.b) {
-            case 7:
-                return new net.md_5.bungee.api.chat.HoverEvent(net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT, new BaseComponent[]{new ComponentText().str(h.getString()).toBungee()});
+        if (h.b == 7) {
+            return new HoverEvent(HoverEvent.Action.SHOW_TEXT, new BaseComponent[]{new ComponentText().str(h.getString()).toBungee()});
         }
         return null;
     }
@@ -240,9 +234,8 @@ class VeloBuilder {
     }
 
     private net.kyori.adventure.text.event.HoverEvent<?> a(TextHoverEvent h) {
-        switch (h.b) {
-            case 7:
-                return net.kyori.adventure.text.event.HoverEvent.showText(new ComponentText().str(h.getString()).toVelo());
+        if (h.b == 7) {
+            return net.kyori.adventure.text.event.HoverEvent.showText(new ComponentText().str(h.getString()).toVelo());
         }
         return null;
     }
