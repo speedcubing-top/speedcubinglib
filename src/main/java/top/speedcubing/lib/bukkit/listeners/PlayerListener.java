@@ -1,6 +1,7 @@
 package top.speedcubing.lib.bukkit.listeners;
 
 import net.minecraft.server.v1_8_R3.PacketPlayOutSpawnEntityLiving;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -13,10 +14,13 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import top.speedcubing.lib.bukkit.CubingLibPlayer;
 import top.speedcubing.lib.bukkit.entity.Hologram;
 import top.speedcubing.lib.bukkit.entity.NPC;
 import top.speedcubing.lib.bukkit.inventory.InventoryListener;
+import top.speedcubing.lib.speedcubingLibBukkit;
 
 public class PlayerListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
@@ -137,6 +141,45 @@ public class PlayerListener implements Listener {
             }
         }
 //        System.out.println(t - System.currentTimeMillis());
+    }
+
+    // PlayerMoveEvent doesn't fire for teleports, so the radius-crossing logic above never re-sends NPCs/holograms
+    // to a player teleported back near them (e.g. void -> spawn). Re-send whatever is in range after the teleport.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void PlayerTeleportEvent(PlayerTeleportEvent e) {
+        if (e.getFrom().getWorld() == e.getTo().getWorld())
+            resendNearby(e.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void PlayerRespawnEvent(PlayerRespawnEvent e) {
+        resendNearby(e.getPlayer());
+    }
+
+    // next tick: the player's position (and world, for respawns) is only final after the event
+    private void resendNearby(Player player) {
+        Bukkit.getScheduler().runTask(speedcubingLibBukkit.getPlugin(speedcubingLibBukkit.class), () -> {
+            if (!player.isOnline())
+                return;
+            Location at = player.getLocation();
+            String world = at.getWorld().getName();
+            for (NPC npc : NPC.all) {
+                if (npc.autoSpawn && npc.world.contains(world) && (npc.everyoneCanSee || npc.hasListener(player))
+                        && withinXZ(at, npc.entityPlayer.locX, npc.entityPlayer.locZ, 128))
+                    npc.setListener(player).spawn().undoSetListener();
+            }
+            for (Hologram hologram : Hologram.all) {
+                if (hologram.autoSpawn && hologram.world.contains(world) && (hologram.everyoneCanSee || hologram.hasListener(player))
+                        && withinXZ(at, hologram.armorStand.locX, hologram.armorStand.locZ, 64))
+                    hologram.setListener(player).spawn().undoSetListener();
+            }
+        });
+    }
+
+    private static boolean withinXZ(Location at, double x, double z, double radius) {
+        double dx = x - at.getX();
+        double dz = z - at.getZ();
+        return dx * dx + dz * dz < radius * radius;
     }
 
     private void addHologram(Player player, Hologram hologram) {
