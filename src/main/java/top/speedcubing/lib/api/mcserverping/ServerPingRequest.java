@@ -95,7 +95,7 @@ public class ServerPingRequest {
         MinecraftPacket handshakePacket = new MinecraftPacket(0x00, handshake.toByteArray());
         socketOut.write(handshakePacket.toByteArray());
 
-        //Staus Request
+        //Status Request
         MinecraftPacket statusRequestPacket = new MinecraftPacket(0x00, new byte[0]);
         socketOut.write(statusRequestPacket.toByteArray());
 

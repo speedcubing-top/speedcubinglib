@@ -111,23 +111,23 @@ public class SideBar implements Listener {
         if (str.length() <= 16)
             prefix = str;
         else {
-            boolean splitted = false;
+            boolean split = false;
             if (str.charAt(15) == '§') {
                 prefix = str.substring(0, 15);
                 if (str.charAt(16) < 'k')
                     suffix = str.substring(15);
             } else {
-                splitted = true;
+                split = true;
                 prefix = str.substring(0, 16);
             }
-            for (int j = splitted ? 14 : 13; j >= 0; j--) {
+            for (int j = split ? 14 : 13; j >= 0; j--) {
                 char next = str.charAt(j + 1);
                 if (str.charAt(j) == '§' && next < 'k') {
-                    suffix = "§" + next + str.substring(splitted ? 16 : 15);
+                    suffix = "§" + next + str.substring(split ? 16 : 15);
                     break;
                 }
             }
-            suffix = suffix.isEmpty() ? str.substring(splitted ? 16 : 15) : suffix;
+            suffix = suffix.isEmpty() ? str.substring(split ? 16 : 15) : suffix;
         }
         if (suffix.length() > 1) {
             if (suffix.charAt(0) == '§' && suffix.charAt(1) == c)

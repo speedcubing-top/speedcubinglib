@@ -23,7 +23,7 @@ public class InventoryBuilder {
         this(null, size, title);
     }
 
-    //item destory at InventoryListener onClose -> iterator.remove();
+    //item destroy at InventoryListener onClose -> iterator.remove();
     public InventoryBuilder(Player player, int size, String title) {
         inventory = Bukkit.createInventory(null, size, title);
         clickable = new boolean[size + 36];
