@@ -28,6 +28,11 @@ public class SQLRow implements Iterable<SQLField> {
         }
     }
 
+    /** Builds a row from already-read fields (e.g. a cached copy of a JDBC row). */
+    public SQLRow(List<SQLField> fields) {
+        this.fields.addAll(fields);
+    }
+
     public boolean isEmpty() {
         return size() == 0;
     }
