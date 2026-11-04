@@ -6,37 +6,34 @@ import java.util.function.Consumer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import top.speedcubing.lib.bukkit.events.inventory.ClickInventoryEvent;
 import top.speedcubing.lib.bukkit.events.inventory.CloseInventoryEvent;
 import top.speedcubing.lib.utils.ReflectionUtils;
 
-public class InventoryBuilder {
+// The builder is the inventory's holder: InventoryListener resolves it via getHolder(), and it is
+// garbage-collected together with its inventory instead of living in a static registry.
+public class InventoryBuilder implements InventoryHolder {
     public final Map<Integer, Consumer<ClickInventoryEvent>> clickEvents = new HashMap<>();
     public final boolean[] clickable;
     public Consumer<ClickInventoryEvent> allClickEvent;
     public Consumer<CloseInventoryEvent> closeInventoryEvent;
-    private final Player player;
     private final Inventory inventory;
 
     public InventoryBuilder(int size, String title) {
-        this(null, size, title);
-    }
-
-    //item destroy at InventoryListener onClose -> iterator.remove();
-    public InventoryBuilder(Player player, int size, String title) {
-        inventory = Bukkit.createInventory(null, size, title);
+        inventory = Bukkit.createInventory(this, size, title);
         clickable = new boolean[size + 36];
-        this.player = player;
-        InventoryListener.inventoryMap.put(this, player);
     }
 
+    // player is no longer needed (builders aren't registered per player anymore); kept for API compatibility
+    public InventoryBuilder(Player player, int size, String title) {
+        this(size, title);
+    }
+
+    @Override
     public Inventory getInventory() {
         return inventory;
-    }
-
-    boolean isTempInventory() {
-        return player != null;
     }
 
     public void setTitle(String title) {

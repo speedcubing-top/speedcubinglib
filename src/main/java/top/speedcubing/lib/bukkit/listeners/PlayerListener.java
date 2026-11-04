@@ -64,7 +64,6 @@ public class PlayerListener implements Listener {
         CubingLibPlayer.user.remove(player);
         NPC.all.forEach(a -> a.removeListener(player));
         Hologram.all.forEach(a -> a.removeListener(player));
-        InventoryListener.playerQuitEvent(e);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
