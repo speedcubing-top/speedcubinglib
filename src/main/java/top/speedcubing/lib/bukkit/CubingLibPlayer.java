@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.server.v1_8_R3.EntityWither;
 import net.minecraft.server.v1_8_R3.PacketPlayOutSpawnEntityLiving;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
@@ -15,14 +14,6 @@ import top.speedcubing.lib.bukkit.handler.PacketPlayInHandler;
 import top.speedcubing.lib.bukkit.handler.PacketPlayOutHandler;
 
 public class CubingLibPlayer {
-
-    static {
-        EntityWither wither = new EntityWither(((CraftWorld) Bukkit.getWorlds().get(0)).getHandle());
-        wither.setInvisible(true);
-        sharedWither = wither;
-    }
-
-    public static EntityWither sharedWither;
 
     public static Map<Player, CubingLibPlayer> user = new HashMap<>();
 
@@ -38,6 +29,8 @@ public class CubingLibPlayer {
     Player player;
 
     String bossbar;
+    // one wither per player: the spawn packet keeps a reference to the entity's DataWatcher, so a shared entity would leak other players' text
+    EntityWither bossbarWither;
 
     public CubingLibPlayer(Player player) {
         this.player = player;
@@ -66,10 +59,18 @@ public class CubingLibPlayer {
 
     public void setBossbar(String bossbar) {
         this.bossbar = bossbar;
+        if (bossbarWither == null) {
+            bossbarWither = new EntityWither(((CraftWorld) player.getWorld()).getHandle());
+            bossbarWither.setInvisible(true);
+        }
         Location location = player.getLocation();
         Location newLocation = location.clone().add(location.getDirection().multiply(100));
-        sharedWither.setCustomName(bossbar);
-        sharedWither.setLocation(newLocation.getX(), newLocation.getY(), newLocation.getZ(), 0, 0);
-        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(new PacketPlayOutSpawnEntityLiving(sharedWither));
+        bossbarWither.setCustomName(bossbar);
+        sendBossbar(newLocation);
+    }
+
+    public void sendBossbar(Location location) {
+        bossbarWither.setLocation(location.getX(), location.getY(), location.getZ(), 0, 0);
+        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(new PacketPlayOutSpawnEntityLiving(bossbarWither));
     }
 }

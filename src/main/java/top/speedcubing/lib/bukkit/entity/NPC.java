@@ -174,8 +174,6 @@ public class NPC {
         );
         if (nameTagHidden)
             hideNametag();
-        if (nameTagHidden)
-            hideNametag();
         if (itemInHand != null)
             setItemInHand(itemInHand);
         for (int i = 0; i < 4; i++)

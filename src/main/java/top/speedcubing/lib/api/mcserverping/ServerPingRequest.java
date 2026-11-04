@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import top.speedcubing.lib.minecraft.packet.HandshakePacket;
@@ -22,6 +23,7 @@ public class ServerPingRequest {
     private boolean dnsLookup = true;
     private boolean srvLookup = true;
     private int timeout = 1000;
+    private static final int MAX_STRING_BYTES = 32767 * 4;
 
     public ServerPingRequest serverAddress(String hostname) {
         handshake.setServerAddress(hostname);
@@ -83,37 +85,43 @@ public class ServerPingRequest {
             }
         }
         long ping;
-        Socket socket = new Socket();
-        long start = System.currentTimeMillis();
-        socket.connect(new InetSocketAddress(srvHostname, srvPort), timeout);
-        ping = System.currentTimeMillis() - start;
+        try (Socket socket = new Socket()) {
+            long start = System.currentTimeMillis();
+            socket.connect(new InetSocketAddress(srvHostname, srvPort), timeout);
+            ping = System.currentTimeMillis() - start;
+            socket.setSoTimeout(timeout);
 
-        DataInputStream sokcetIn = new DataInputStream(socket.getInputStream());
-        DataOutputStream socketOut = new DataOutputStream(socket.getOutputStream());
+            DataInputStream sokcetIn = new DataInputStream(socket.getInputStream());
+            DataOutputStream socketOut = new DataOutputStream(socket.getOutputStream());
 
-        //Handshake Request
-        MinecraftPacket handshakePacket = new MinecraftPacket(0x00, handshake.toByteArray());
-        socketOut.write(handshakePacket.toByteArray());
+            //Handshake Request
+            MinecraftPacket handshakePacket = new MinecraftPacket(0x00, handshake.toByteArray());
+            socketOut.write(handshakePacket.toByteArray());
 
-        //Status Request
-        MinecraftPacket statusRequestPacket = new MinecraftPacket(0x00, new byte[0]);
-        socketOut.write(statusRequestPacket.toByteArray());
+            //Status Request
+            MinecraftPacket statusRequestPacket = new MinecraftPacket(0x00, new byte[0]);
+            socketOut.write(statusRequestPacket.toByteArray());
 
-        //Status Response
-        int packetLength = IOUtils.readVarInt(sokcetIn);
-        int packetID = IOUtils.readVarInt(sokcetIn);
-        String jsonResponse = IOUtils.readString(sokcetIn);
+            //Status Response
+            int packetLength = IOUtils.readVarInt(sokcetIn);
+            int packetID = IOUtils.readVarInt(sokcetIn);
+            int jsonLength = IOUtils.readVarInt(sokcetIn);
+            // protocol max string length is 32767 chars (up to 4 UTF-8 bytes each); refuse anything larger from the remote
+            if (jsonLength < 0 || jsonLength > MAX_STRING_BYTES)
+                throw new IOException("Invalid status response length: " + jsonLength);
+            String jsonResponse = new String(IOUtils.readFully(sokcetIn, jsonLength), StandardCharsets.UTF_8);
 
-        //Ping Request
-        MinecraftPacket pingRequestPacket = new MinecraftPacket(0x01, new ByteArrayBuffer().writeLong(System.currentTimeMillis()).toByteArray());
-        socketOut.write(pingRequestPacket.toByteArray());
+            //Ping Request
+            MinecraftPacket pingRequestPacket = new MinecraftPacket(0x01, new ByteArrayBuffer().writeLong(System.currentTimeMillis()).toByteArray());
+            socketOut.write(pingRequestPacket.toByteArray());
 
-        //Ping Response
-        packetLength = IOUtils.readVarInt(sokcetIn);
-        packetID = IOUtils.readVarInt(sokcetIn);
-        long response = sokcetIn.readLong();
+            //Ping Response
+            packetLength = IOUtils.readVarInt(sokcetIn);
+            packetID = IOUtils.readVarInt(sokcetIn);
+            long response = sokcetIn.readLong();
 
-        return new ServerPingResponse(this.handshake.getServerAddress(), this.handshake.getServerPort(), srvHostname, srvPort, ping, srv, new ServerPingJSONResponse(jsonResponse), records);
+            return new ServerPingResponse(this.handshake.getServerAddress(), this.handshake.getServerPort(), srvHostname, srvPort, ping, srv, new ServerPingJSONResponse(jsonResponse), records);
+        }
     }
 
     public static void main(String[] args) {

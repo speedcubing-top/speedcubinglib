@@ -1,5 +1,7 @@
 package top.speedcubing.lib.discord;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.awt.Color;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -334,6 +336,8 @@ public class DiscordWebhook {
 
     private static class JSONObject {
 
+        private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
+
         private final HashMap<String, Object> map = new HashMap<>();
 
         void put(String key, Object value) {
@@ -377,7 +381,7 @@ public class DiscordWebhook {
         }
 
         private String quote(String string) {
-            return "\"" + string + "\"";
+            return GSON.toJson(string);
         }
     }
 

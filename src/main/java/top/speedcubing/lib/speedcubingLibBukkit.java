@@ -1,6 +1,7 @@
 package top.speedcubing.lib;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -31,6 +32,12 @@ public class speedcubingLibBukkit extends JavaPlugin {
             }
 
             Glow.glow = new Glow(100);
+            // on re-enable (/reload, plugman) id 100 is still held by the previous Glow instance (possibly from an old class loader): replace it
+            Enchantment old = Enchantment.getById(Glow.glow.getId());
+            if (old != null) {
+                ((Map<?, ?>) ReflectionUtils.getStaticField(Enchantment.class, "byId")).remove(old.getId());
+                ((Map<?, ?>) ReflectionUtils.getStaticField(Enchantment.class, "byName")).remove(old.getName());
+            }
             Enchantment.registerEnchantment(Glow.glow);
 
             Bukkit.getScheduler().scheduleSyncRepeatingTask(this, () -> {

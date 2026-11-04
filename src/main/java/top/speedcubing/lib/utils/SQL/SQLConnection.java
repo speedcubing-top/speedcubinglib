@@ -171,7 +171,7 @@ public class SQLConnection implements AutoCloseable {
         try {
             r.run();
             commit();
-        } catch (SQLRuntimeException e) {
+        } catch (RuntimeException e) {
             rollback();
             throw e;
         } finally {

@@ -8,6 +8,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import javax.crypto.Cipher;
 import top.speedcubing.lib.utils.bytes.DataConversion;
@@ -60,7 +61,7 @@ public class CryptoUtils {
     }
 
     public static PrivateKey toPrivateRSA(byte[] key) throws InvalidKeySpecException, NoSuchAlgorithmException {
-        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(key);
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(key);
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         return keyFactory.generatePrivate(keySpec);
     }

@@ -1,6 +1,5 @@
 package top.speedcubing.lib.bukkit.listeners;
 
-import net.minecraft.server.v1_8_R3.PacketPlayOutSpawnEntityLiving;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
@@ -94,9 +93,7 @@ public class PlayerListener implements Listener {
         String world = to.getWorld().getName();
         CubingLibPlayer cubingPlayer = CubingLibPlayer.get(player);
         if (cubingPlayer.getBossbar() != null) {
-            Location newLocation = to.clone().add(to.getDirection().multiply(100));
-            CubingLibPlayer.sharedWither.setLocation(newLocation.getX(), newLocation.getY(), newLocation.getZ(), 0, 0);
-            ((CraftPlayer) player).getHandle().playerConnection.sendPacket(new PacketPlayOutSpawnEntityLiving(CubingLibPlayer.sharedWither));
+            cubingPlayer.sendBossbar(to.clone().add(to.getDirection().multiply(100)));
         }
         double xDiffFrom;
         double zDiffFrom;

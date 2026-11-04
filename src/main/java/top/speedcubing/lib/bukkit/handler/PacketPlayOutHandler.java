@@ -1,13 +1,13 @@
 package top.speedcubing.lib.bukkit.handler;
 
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToMessageEncoder;
-import java.util.List;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
 import net.minecraft.server.v1_8_R3.Packet;
 import org.bukkit.entity.Player;
 import top.speedcubing.lib.bukkit.events.packet.PlayOutEvent;
 
-public class PacketPlayOutHandler extends MessageToMessageEncoder<Packet<?>> {
+public class PacketPlayOutHandler extends ChannelOutboundHandlerAdapter {
 
     private final Player player;
 
@@ -16,15 +16,20 @@ public class PacketPlayOutHandler extends MessageToMessageEncoder<Packet<?>> {
     }
 
     @Override // Out Packet
-    protected void encode(ChannelHandlerContext channel, Packet<?> packet, List<Object> arg) {
-        if (packet == null)
-            return;
-        try {
-            if (((PlayOutEvent) new PlayOutEvent(player, packet).call()).isCancelled())
+    public void write(ChannelHandlerContext channel, Object msg, ChannelPromise promise) throws Exception {
+        if (msg instanceof Packet) {
+            boolean cancelled = false;
+            try {
+                cancelled = ((PlayOutEvent) new PlayOutEvent(player, (Packet<?>) msg).call()).isCancelled();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if (cancelled) {
+                // drop the packet without failing the write (an empty encoder output would disconnect the player)
+                promise.trySuccess();
                 return;
-            arg.add(packet);
-        } catch (Exception e) {
-            e.printStackTrace();
+            }
         }
+        super.write(channel, msg, promise);
     }
 }

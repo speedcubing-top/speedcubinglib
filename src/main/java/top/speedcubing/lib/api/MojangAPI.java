@@ -4,11 +4,12 @@ import com.google.common.base.Preconditions;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,7 +19,6 @@ import top.speedcubing.lib.api.mojang.ProfileSkin;
 import top.speedcubing.lib.api.mojang.ProfileTexture;
 import top.speedcubing.lib.bukkit.events.packet.ProfileRespondEvent;
 import top.speedcubing.lib.utils.UUIDUtils;
-import top.speedcubing.lib.utils.bytes.IOUtils;
 import top.speedcubing.lib.utils.http.HTTPResponse;
 import top.speedcubing.lib.utils.http.HTTPUtils;
 
@@ -53,24 +53,24 @@ public class MojangAPI {
 
         String url = "https://api.mojang.com/profiles/minecraft";
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(HTTPUtils.TIMEOUT_MILLIS);
+        connection.setReadTimeout(HTTPUtils.TIMEOUT_MILLIS);
         connection.setRequestMethod("POST");
         connection.setRequestProperty("Content-Type", "application/json");
         connection.setDoOutput(true);
-        DataOutputStream out = new DataOutputStream(connection.getOutputStream());
-        out.writeBytes(payload.toString());
-        out.flush();
-        IOUtils.closeQuietly(out);
+        try (OutputStream out = connection.getOutputStream()) {
+            out.write(payload.toString().getBytes(StandardCharsets.UTF_8));
+        }
 
         if (connection.getResponseCode() != 200)
             throw new APIResponseException(url, connection.getResponseCode());
 
-        StringBuilder textBuilder = new StringBuilder();
-        InputStream in = connection.getInputStream();
-        int b;
-        while ((b = in.read()) != -1)
-            textBuilder.append((char) b);
+        String text;
+        try (InputStream in = connection.getInputStream()) {
+            text = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
         List<Profile> result = new ArrayList<>();
-        for (JsonElement e : JsonParser.parseString(textBuilder.toString()).getAsJsonArray()) {
+        for (JsonElement e : JsonParser.parseString(text).getAsJsonArray()) {
             String fixedName = e.getAsJsonObject().get("name").getAsString();
             String uuid = UUIDUtils.dash(e.getAsJsonObject().get("id").getAsString());
             result.add(new Profile(fixedName, uuid));
