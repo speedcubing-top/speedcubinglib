@@ -34,12 +34,6 @@ jobs:
         chmod +x ./build.sh
         ./build.sh
 
-    - name: upload-artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-output
-        path: ./target/speedcubingLib-1.0-SNAPSHOT.jar
-
     - name: Setup Maven Settings
       if: ${{ !inputs.build_only }}
       run: |
