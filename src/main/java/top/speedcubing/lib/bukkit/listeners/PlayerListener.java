@@ -90,61 +90,48 @@ public class PlayerListener implements Listener {
         Player player = e.getPlayer();
         Location to = e.getTo();
         Location from = e.getFrom();
-        String world = to.getWorld().getName();
         CubingLibPlayer cubingPlayer = CubingLibPlayer.get(player);
         if (cubingPlayer.getBossbar() != null) {
             cubingPlayer.sendBossbar(to.clone().add(to.getDirection().multiply(100)));
         }
-        double xDiffFrom;
-        double zDiffFrom;
-        double xDiffTo;
-        double zDiffTo;
-        double fromDiff;
-        double toDiff;
+        updateRange(player, from, to);
+    }
+
+    // PlayerMoveEvent doesn't fire for teleports. Apply the same radius crossing to the teleport itself, so
+    // NPCs/holograms despawned when the player drifted out of range (e.g. falling into the void) come back
+    // when they are teleported in range again (void -> spawn), for every listener, not only auto-spawn ones.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void PlayerTeleportEvent(PlayerTeleportEvent e) {
+        if (e.getFrom().getWorld() == e.getTo().getWorld())
+            updateRange(e.getPlayer(), e.getFrom(), e.getTo());
+    }
+
+    /** Despawns what the player leaves the range of (NPCs 128, holograms 64 blocks XZ) and spawns what they enter. */
+    private void updateRange(Player player, Location from, Location to) {
+        String world = to.getWorld().getName();
         for (NPC npc : NPC.all) {
-            if (npc.world.contains(world)) {
-                if (npc.everyoneCanSee || npc.hasListener(player)) {
-                    xDiffTo = npc.entityPlayer.locX - to.getX();
-                    zDiffTo = npc.entityPlayer.locZ - to.getZ();
-                    xDiffFrom = npc.entityPlayer.locX - from.getX();
-                    zDiffFrom = npc.entityPlayer.locZ - from.getZ();
-                    fromDiff = xDiffFrom * xDiffFrom + zDiffFrom * zDiffFrom;
-                    toDiff = xDiffTo * xDiffTo + zDiffTo * zDiffTo;
-                    if (toDiff > 128 * 128 && fromDiff < 128 * 128) {
-                        npc.setListener(player).despawn().undoSetListener();
-                    } else if (toDiff < 128 * 128 && fromDiff > 128 * 128) {
-                        int p = npc.ms;
-                        npc.setHideFromTabDelay(-1).setListener(player).spawn().hideFromTab(50).undoSetListener().setHideFromTabDelay(p);
-                    }
+            if (npc.world.contains(world) && (npc.everyoneCanSee || npc.hasListener(player))) {
+                boolean wasIn = withinXZ(from, npc.entityPlayer.locX, npc.entityPlayer.locZ, 128);
+                boolean isIn = withinXZ(to, npc.entityPlayer.locX, npc.entityPlayer.locZ, 128);
+                if (wasIn && !isIn) {
+                    npc.setListener(player).despawn().undoSetListener();
+                } else if (!wasIn && isIn) {
+                    int p = npc.ms;
+                    npc.setHideFromTabDelay(-1).setListener(player).spawn().hideFromTab(50).undoSetListener().setHideFromTabDelay(p);
                 }
             }
         }
         for (Hologram hologram : Hologram.all) {
-            if (hologram.world.contains(world)) {
-                if (hologram.everyoneCanSee || hologram.hasListener(player)) {
-                    xDiffTo = hologram.armorStand.locX - to.getX();
-                    zDiffTo = hologram.armorStand.locZ - to.getZ();
-                    xDiffFrom = hologram.armorStand.locX - from.getX();
-                    zDiffFrom = hologram.armorStand.locZ - from.getZ();
-                    fromDiff = xDiffFrom * xDiffFrom + zDiffFrom * zDiffFrom;
-                    toDiff = xDiffTo * xDiffTo + zDiffTo * zDiffTo;
-                    if (toDiff > 64 * 64 && fromDiff < 64 * 64) {
-                        hologram.setListener(player).despawn().undoSetListener();
-                    } else if (toDiff < 64 * 64 && fromDiff > 64 * 64) {
-                        hologram.setListener(player).spawn().undoSetListener();
-                    }
+            if (hologram.world.contains(world) && (hologram.everyoneCanSee || hologram.hasListener(player))) {
+                boolean wasIn = withinXZ(from, hologram.armorStand.locX, hologram.armorStand.locZ, 64);
+                boolean isIn = withinXZ(to, hologram.armorStand.locX, hologram.armorStand.locZ, 64);
+                if (wasIn && !isIn) {
+                    hologram.setListener(player).despawn().undoSetListener();
+                } else if (!wasIn && isIn) {
+                    hologram.setListener(player).spawn().undoSetListener();
                 }
             }
         }
-//        System.out.println(t - System.currentTimeMillis());
-    }
-
-    // PlayerMoveEvent doesn't fire for teleports, so the radius-crossing logic above never re-sends NPCs/holograms
-    // to a player teleported back near them (e.g. void -> spawn). Re-send whatever is in range after the teleport.
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void PlayerTeleportEvent(PlayerTeleportEvent e) {
-        if (e.getFrom().getWorld() == e.getTo().getWorld())
-            resendNearby(e.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
