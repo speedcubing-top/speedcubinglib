@@ -28,11 +28,7 @@ jobs:
       with:
         java-version: '21'
         distribution: 'temurin'
-
-    - name: Run build.sh
-      run: |
-        chmod +x ./build.sh
-        ./build.sh
+        cache: maven
 
     - name: Setup Maven Settings
       if: ${{ !inputs.build_only }}
@@ -56,10 +52,13 @@ jobs:
         </settings>
         EOF
 
-    - name: Deploy to Nexus
-      if: ${{ !inputs.build_only }}
+    # deploy includes package: a deploying run builds once and uploads that jar to Nexus
+    - name: Run build.sh
+      env:
+        MAVEN_GOAL: ${{ inputs.build_only && 'package' || 'deploy' }}
       run: |
-        mvn deploy -B --no-transfer-progress -DskipTests
+        chmod +x ./build.sh
+        ./build.sh
         
     - name: Trigger Webhook Runner
       if: ${{ !inputs.build_only }}
