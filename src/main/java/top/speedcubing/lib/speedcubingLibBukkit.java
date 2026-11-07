@@ -59,6 +59,7 @@ public class speedcubingLibBukkit extends JavaPlugin {
                     Set<SignBuilder> toRemove = new HashSet<>();
                     for (SignBuilder b : SignBuilder.signs) {
                         if (System.currentTimeMillis() - b.getGeneratedTime() > b.getTimeout()) {
+                            b.restore();
                             toRemove.add(b);
                         }
                     }

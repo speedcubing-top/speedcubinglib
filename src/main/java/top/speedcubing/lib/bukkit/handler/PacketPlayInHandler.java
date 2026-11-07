@@ -69,6 +69,7 @@ public class PacketPlayInHandler extends ChannelDuplexHandler {
                 for (SignBuilder b : SignBuilder.signs) {
                     if (b.getPlayer() == player) {
                         b.getEvent().accept(new SignUpdateEvent(player, s));
+                        b.restore();
                         toRemove.add(b);
                     }
                 }
