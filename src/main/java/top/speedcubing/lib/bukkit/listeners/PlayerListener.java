@@ -14,11 +14,13 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerRegisterChannelEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import top.speedcubing.lib.bukkit.CubingLibPlayer;
 import top.speedcubing.lib.bukkit.entity.Hologram;
 import top.speedcubing.lib.bukkit.entity.NPC;
 import top.speedcubing.lib.bukkit.inventory.InventoryListener;
+import top.speedcubing.lib.bukkit.handler.PacketPlayInHandler;
 import top.speedcubing.lib.speedcubingLibBukkit;
 
 public class PlayerListener implements Listener {
@@ -69,6 +71,13 @@ public class PlayerListener implements Listener {
     public void PlayerJoinEvent(PlayerJoinEvent e) {
         Player player = e.getPlayer();
         new CubingLibPlayer(player);
+    }
+
+    // the proxy registers the channel with us once the player is in; answering tells it this backend drops chat on request
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void PlayerRegisterChannelEvent(PlayerRegisterChannelEvent e) {
+        if (e.getChannel().equals(PacketPlayInHandler.CHAT_DROP_CHANNEL))
+            e.getPlayer().sendPluginMessage(speedcubingLibBukkit.getPlugin(speedcubingLibBukkit.class), PacketPlayInHandler.CHAT_DROP_CHANNEL, new byte[0]);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

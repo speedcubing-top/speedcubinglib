@@ -15,6 +15,7 @@ import top.speedcubing.lib.bukkit.inventory.Glow;
 import top.speedcubing.lib.bukkit.inventory.SignBuilder;
 import top.speedcubing.lib.bukkit.listeners.PlayerListener;
 import top.speedcubing.lib.utils.ReflectionUtils;
+import top.speedcubing.lib.bukkit.handler.PacketPlayInHandler;
 
 public class speedcubingLibBukkit extends JavaPlugin {
     public static final boolean is1_8_8 = Bukkit.getVersion().contains("(MC: 1.8.8)");
@@ -22,6 +23,7 @@ public class speedcubingLibBukkit extends JavaPlugin {
 
     public void onEnable() {
         Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+        Bukkit.getMessenger().registerOutgoingPluginChannel(this, PacketPlayInHandler.CHAT_DROP_CHANNEL);
         if (is1_8_8) {
             Bukkit.getPluginManager().registerEvents(new PlayerListener(), this);
             ReflectionUtils.setStaticField(Enchantment.class, "acceptingNew", true);

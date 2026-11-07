@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Set;
 import net.minecraft.server.v1_8_R3.IChatBaseComponent;
 import net.minecraft.server.v1_8_R3.Packet;
+import net.minecraft.server.v1_8_R3.PacketPlayInChat;
+import net.minecraft.server.v1_8_R3.PacketPlayInCustomPayload;
 import net.minecraft.server.v1_8_R3.PacketPlayInUpdateSign;
 import net.minecraft.server.v1_8_R3.PacketPlayInUseEntity;
 import org.bukkit.Bukkit;
@@ -22,7 +24,16 @@ import top.speedcubing.lib.speedcubingLibBukkit;
 import top.speedcubing.lib.utils.ReflectionUtils;
 
 public class PacketPlayInHandler extends ChannelDuplexHandler {
+    /**
+     * The proxy cannot deny a 1.19+ client's signed chat without Velocity disconnecting the player, so
+     * it lets the message through and sends this (empty) message first: drop the next chat packet.
+     * Both arrive on this connection in order. Also hardcoded in speedcubingProxy's SignedChatListener.
+     */
+    public static final String CHAT_DROP_CHANNEL = "speedcubing:chat";
+
     private final Player player;
+    // netty thread only
+    private int pendingChatDrops;
 
     public PacketPlayInHandler(Player player) {
         this.player = player;
@@ -32,6 +43,16 @@ public class PacketPlayInHandler extends ChannelDuplexHandler {
     public void channelRead(ChannelHandlerContext channel, Object packet) {
         if (packet == null)
             return;
+
+        if (packet instanceof PacketPlayInCustomPayload && CHAT_DROP_CHANNEL.equals(((PacketPlayInCustomPayload) packet).a())) {
+            ((PacketPlayInCustomPayload) packet).b().release(); // the server would have released it after handling
+            pendingChatDrops++;
+            return;
+        }
+        if (packet instanceof PacketPlayInChat && pendingChatDrops > 0) {
+            pendingChatDrops--;
+            return;
+        }
 
         try {
             if (((PlayInEvent) new PlayInEvent(player, (Packet<?>) packet).call()).isCancelled())
