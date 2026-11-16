@@ -133,6 +133,9 @@ public class SideBar implements Listener {
             if (suffix.charAt(0) == '§' && suffix.charAt(1) == c)
                 suffix = suffix.substring(2);
         }
+        // 1.8 clients disconnect on a team prefix/suffix over 16 characters (the server allows 32)
+        if (suffix.length() > 16)
+            suffix = suffix.charAt(15) == '§' ? suffix.substring(0, 15) : suffix.substring(0, 16);
         return new String[]{prefix, suffix};
     }
 }
