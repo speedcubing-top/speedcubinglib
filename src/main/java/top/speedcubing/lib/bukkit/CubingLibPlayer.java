@@ -37,8 +37,10 @@ public class CubingLibPlayer {
 
         ChannelPipeline pipeline = ((CraftPlayer) player).getHandle().playerConnection.networkManager.channel.pipeline();
 
-        if (pipeline.get("decoder") != null)
-            pipeline.addAfter("decoder", "speedcubingLib-packetplayin", new PacketPlayInHandler(player));
+        // not right after "decoder": ViaVersion (nms-player-ticking: false) fires its emulated 1.9+ idle flying packets
+        // from the context after "decoder", which would skip a handler placed there
+        if (pipeline.get("packet_handler") != null)
+            pipeline.addBefore("packet_handler", "speedcubingLib-packetplayin", new PacketPlayInHandler(player));
         if (pipeline.get("encoder") != null)
             pipeline.addAfter("encoder", "speedcubingLib-packetplayout", new PacketPlayOutHandler(player));
 
