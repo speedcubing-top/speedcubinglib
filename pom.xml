@@ -9,6 +9,9 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
+        <maven.build.timestamp.format>yyyy-MM-dd HH:mm 'UTC'</maven.build.timestamp.format>
+        <!-- maven.build.timestamp itself is not filtered into resources -->
+        <build.date>${maven.build.timestamp}</build.date>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -72,4 +75,24 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>bungee.yml</include>
+                    <include>plugin.yml</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>bungee.yml</exclude>
+                    <exclude>plugin.yml</exclude>
+                </excludes>
+            </resource>
+        </resources>
+    </build>
 </project>

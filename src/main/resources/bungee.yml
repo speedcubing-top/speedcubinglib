@@ -1,4 +1,4 @@
 name: speedcubingLib
 main: top.speedcubing.lib.speedcubingLibBungee
-version: 1.0
+version: '${build.date}'
 author: speedcubing
